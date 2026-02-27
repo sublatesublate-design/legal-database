@@ -1,93 +1,129 @@
-# 国家法律法规数据库 - 智能辅助系统
+# 国家法律法规数据库 - 智能辅助系统 (Legal Database Hub)
 
-本系统集成了自动化法规下载、结构化存储及 MCP 智能接入功能，旨在为法律专业人士（如律师、法务）提供精准的法律意见书编写辅助。
+本项目是一个专门为法律专业人士（律师、法务、法学生）开发的高性能、自动化的国家法律法规本地化与智能问答辅助系统。
 
-## 核心功能
+系统集成了自动化法规下载、结构化存储、以及专为 AI 助手设计的高性能 MCP (Model Context Protocol) 接口，让您的 AI 能够毫秒级检索和引用最准确、最新的中国法律条文。
 
-1. **自动化下载**: 适配 `flk.npc.gov.cn` 官方库，支持“法律”、“行政法规”、“司法解释”等全分类批量下载。
-2. **状态感知**: 支持按“有效”、“已废止”、“尚未生效”等状态过滤法条，确保引用时效性。
-3. **本地数据库**: 将数千份 DOCX 文档转化为结构化 SQLite 数据库，支持全文秒级检索。
-4. **MCP Server**: 允许 AI 助手（如 Antigravity）直接调用本地库。
+---
 
-## 安装与配置
+## 🌟 核心引擎与特色
 
-### 1. 运行下载器
+### 1. 自动化数据获取
 
-```powershell
-python batch_downloader.py --category 法律 --status 有效
+- **官方源**：自动从国家法律法规数据库 (`flk.npc.gov.cn`) 等官方渠道批量下载 Word/PDF 格式的法律文件。
+- **全状态追踪**：支持按“有效”、“已废止”、“尚未生效”等状态建立索引，避免 AI 引用失效法条。
+
+### 2. 结构化解析入库
+
+- **智能拆条机**：内置状态机驱动的解析算法，自动识别复杂的“编-分编-章-节-条”的层级树，将长文档精准拆分为独立的法律条文。
+- **SQLite FTS5 + Trigram 检索引擎**：提供工业级的毫秒级全文检索响应速度，支持同义词扩展与概念搜索。
+
+### 3. AI 友好 (MCP 赋能)
+
+- **开箱即用的 MCP Server**：直接为 Claude (或兼容的大模型) 暴露高速的本地法条检索能力。
+- **高性能缓存机制**：内置数据库连接池和多级 LRU 缓存，彻底解决频繁调用带来的性能瓶颈。
+- **别名识别系统**：AI 找“民法典”，系统自动路由至“中华人民共和国民法典”全文，极大节省 token 损耗并减少对话轮数。
+
+### 4. 可视化操作台 (GUI)
+
+- 内置 **Streamlit** 开发的 Web 看板，提供“零代码”的一键库查新、一键增量同步、一键全库修复操作。
+
+---
+
+## 🚀 快速上手 (How to Use)
+
+### 第一步：环境准备
+
+本项目依赖 Python 3.9+。请确保您的机器已安装 Python 以及 Git。
+
+```bash
+# 1. 克隆项目到本地
+git clone https://github.com/sublatesublate-design/legal-database.git
+cd legal-database
+
+# 2. 安装全部依赖
+pip install -r requirements.txt
 ```
 
-### 2. 同步数据库
+> **注意 (爬虫依赖)**：系统使用 Selenium 进行自动化下载，首次运行时需要系统内存在 Chrome 浏览器及对应版本的 `chromedriver`。
 
-```powershell
+### 第二步：数据库初始化与同步
+
+您可以通过可视化界面或命令行进行数据的抓取与初始化。
+
+#### 方法 A：使用可视化管理面板 (推荐)
+
+最简单且直观的方式是启动可视化管理面板：
+
+```bash
+streamlit run app.py
+```
+
+1. 浏览器会自动打开管理界面。
+2. 在侧边栏选择您关注的各类法律分类（如“法律”、“行政法规”）。
+3. 前往 **"📥 批量同步"** 标签页，依次点击 **"下载新文件"** 和 **"处理与入库"**，系统将会自动化建表并将数据解析为结构化数据。
+
+#### 方法 B：使用命令行自动化脚本
+
+如果您更喜欢命令行（或针对服务器部署）：
+
+```bash
+# 1. 下载最新有效的法律文件
+python batch_downloader.py --category 法律 --status 有效
+
+# 2. 将 downloaded 的 docx 文档解析压缩至 SQLite 数据库
 python process_downloads.py
 ```
 
-### 3. 配置 MCP Server
+### 第三步：配置 AI 工具 (MCP Setup)
 
-将以下配置添加到您的 MCP 配置文件中。请注意将 `[YOUR_PATH]` 替换为本项目在您本地的实际绝对路径：
+当数据库 `legal_database.db` 生成完毕后，您就可以让 AI 助理接入这个法庭级大脑了。
+
+以目前支持 MCP 协议的工具 (如 **Cursor, Claude Desktop, 或 Antigravity**) 为例。请找到对应的 MCP 配置文件 (比如 `mcp_settings.json` 或 `claude_desktop_config.json`)，将以下 JSON 配置追加进去：
 
 ```json
 {
   "mcpServers": {
     "legal-db": {
       "command": "python",
-      "args": ["/[YOUR_PATH]/mcp_server.py"],
+      "args": ["/[您的电脑/绝对路径]/legal-database/mcp_server.py"],
       "env": {
-        "PYTHONPATH": "/[YOUR_PATH]"
+        "PYTHONPATH": "/[您的电脑/绝对路径]/legal-database"
       }
     }
   }
 }
 ```
 
-## MCP 提供工具说明
+**千万注意**：修改上方的 `/[您的电脑/绝对路径]` 为你 clone 本项目的实际目录路径！！！
 
-- `search_laws(query)`: 模糊搜索相关法规标题。
-- `get_article(law_title, article_number)`: 获取特定条文原文（如“公司法”、“第二十一条”）。
-- `verify_law_citation(law_title, article_number, content)`: 校验引用的法条内容是否与标准原文一致。
-
-## 日常维护与增量更新
-
-为了保证您的法库始终处于最新状态，建议您执行以下简单的维护流程：
-
-### 1. 增量下载 (按需)
-
-当您在新闻中看到有新法律颁布或修订时，运行下载器：
-
-```powershell
-# 仅下载最新的、感兴趣的分类
-python batch_downloader.py --category 法律 --status 有效 --max-pages 1
-```
-
-*提示：程序会自动跳过已存在的文件，只拉取最新的内容。*
-
-### 2. 一键同步与优化
-
-下载新文件后，运行我为您准备的一键更新脚本：
-
-```powershell
-python update.py
-```
-
-**此脚本会自动执行：**
-
-- **解压与入库**：将 `downloads` 目录下的新 Word 文档同步到数据库。
-- **状态同步**：更新已有法规的最新效力状态。
-- **搜索优化**：重建全文检索引索，确保搜索速度依然极速。
-
-### 3. 在 Antigravity 中生效
-
-同步完成后，只需在 Antigravity 的 **Manage MCP Servers** 界面点击 **Refresh (刷新)** 按钮即可。
+配置保存并**重载/重启 AI 助手**后，您就可以直接在聊天框告诉 AI：“帮我查一下劳动法关于竞业限制是怎么规定的？”，AI 会自动调用您的本地极速法网给出标准结论！
 
 ---
 
-## 许可证 (License)
+## 🛠 MCP 接口参考
 
-本项目采用 [MIT License](LICENSE) 开源协议。
+配置成功后，您的 AI 将会获取以下超能力工具：
+
+1. `search_laws(query, category, status)`: （升级版函数）智能概念检索和全文高亮搜索。
+2. `get_article(law_title, article_number)`: 直指痛点，精准拿取比如“公司法第七十一条”的原文。
+3. `get_law_structure(law_title)`: 获取诸如《民法典》这样庞大法律的长目录结构树 (TOC)。
+4. `check_law_validity(law_title)`: 快速判断一部法律当前到底是“有效”还是“已废止”。
+5. `batch_verify_citations(document_text)`: 批量校验您写好的法律意见书中的引用，核对法条是否有错别字或已失效。
 
 ---
 
-**⚠️ 注意事项：**
+## 📅 日常维护
 
-- 如果您发现某个法条失效了（例如变为了“已废止”），请重新下载该分类并指定 `--status 已废止`，然后运行 `update.py`，数据库会自动更新对应的状态标记。
+法律条款日新月异。当您看到新闻有新规出台时：
+
+1. 启动 `streamlit run app.py` -> 点击 **查新与更新**。
+2. 或者在命令行直接运行 `python update.py` 触发一键增量查新、下载和全库目录索引重建。
+
+---
+
+## 📄 许可证 (License)
+
+本项目遵循 [MIT License](LICENSE) 开源协议。
+
+**⚠️ 免责声明**：本项目仅作为技术辅助工具，检索到的法条信息仅供学习和参考。正式的执业法律文书出具请务必依赖政府公开文件的最新源文本。

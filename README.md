@@ -77,9 +77,18 @@ python process_downloads.py
 
 ### 第三步：配置 AI 工具 (MCP Setup)
 
-当数据库 `legal_database.db` 生成完毕后，您就可以让 AI 助理接入这个法庭级大脑了。
+当数据库 `legal_database.db` 生成完毕后，您就可以让各种支持 MCP 协议的主流 AI 客户端接入这个“法庭级大脑”了。
 
-以目前支持 MCP 协议的工具 (如 **Cursor, Claude Desktop, 或 Antigravity**) 为例。请找到对应的 MCP 配置文件 (比如 `mcp_settings.json` 或 `claude_desktop_config.json`)，将以下 JSON 配置追加进去：
+以下是主流工具的配置方法（**千万注意**：将以下说明中的 `/[您的电脑/绝对路径]/legal-database` 替换为您 clone 本项目的实际目录路径！例如 Windows 下可能是 `C:/Users/name/Desktop/legal-database`）。
+
+#### 1. Claude Desktop / Antigravity (配置 JSON 文件)
+
+找到您的 MCP 配置文件：
+
+- **Claude Desktop**: 通常在 `%APPDATA%\Claude\claude_desktop_config.json` 或 `~/Library/Application Support/Claude/claude_desktop_config.json`。
+- **Antigravity**: 在界面的 "Manage MCP Servers" -> 点击修改 `settings.json`。
+
+追加以下节点：
 
 ```json
 {
@@ -95,9 +104,43 @@ python process_downloads.py
 }
 ```
 
-**千万注意**：修改上方的 `/[您的电脑/绝对路径]` 为你 clone 本项目的实际目录路径！！！
+配置保存并**重启 AI 助手**。
 
-配置保存并**重载/重启 AI 助手**后，您就可以直接在聊天框告诉 AI：“帮我查一下劳动法关于竞业限制是怎么规定的？”，AI 会自动调用您的本地极速法网给出标准结论！
+#### 2. Chatbox (UI 界面配置)
+
+1. 打开 Chatbox 设置 -> **"高级"** 或 **"扩展(MCP)"**。
+2. 点击 **"Add Server"** (添加服务器)。
+3. 配置如下：
+   - **Name**: `legal-db`
+   - **Type**: `stdio` (标准输入输出)
+   - **Command**: `python` (或您系统中的绝对路径，如 `C:\Python39\python.exe`)
+   - **Arguments** (一行一个):
+
+     ```text
+     /[您的电脑/绝对路径]/legal-database/mcp_server.py
+     ```
+
+   - **Environment Variables** (环境变量):
+
+     ```text
+     PYTHONPATH=/[您的电脑/绝对路径]/legal-database
+     ```
+
+4. 保存并测试连接。
+
+#### 3. Cursor IDE
+
+1. 打开 Cursor 设置 (`Ctrl + ,` 或 `Cmd + ,`)。
+2. 搜索 **"MCP"**，点击 **"+ Add new MCP server"**。
+3. 配置如下：
+   - **Type**: `command`
+   - **Name**: `legal-db`
+   - **Command**: `python /[您的电脑/绝对路径]/legal-database/mcp_server.py`
+4. 确保在系统环境变量中或者同级目录下能正确解析脚本所需的 Python 路径。
+
+---
+
+> **🎉 体验魔法**：配置成功并识别到工具后，您就可以直接在新对话中告诉 AI：“帮我查一下劳动法关于竞业限制是怎么规定的？”，AI 会自动调用您的本地极速法网给出标准结论！
 
 ---
 

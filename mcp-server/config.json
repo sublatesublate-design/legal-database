@@ -1,0 +1,12 @@
+{
+    "name": "legal-database",
+    "version": "1.0.0",
+    "description": "中国法律法规数据库 MCP 服务器",
+    "database_path": "../database/legal.db",
+    "server": {
+        "command": "python",
+        "args": [
+            "server.py"
+        ]
+    }
+}
